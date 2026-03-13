@@ -9,7 +9,7 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
-  const [form, setForm] = useState({ name: '', email: '', role: 'customer' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'customer' })
 
   useEffect(() => {
     fetchUsers()
@@ -32,13 +32,17 @@ export default function UserManagement() {
     e.preventDefault()
     try {
       if (editingId) {
-        await api.put(`/users/${editingId}`, form)
+        // On edit, only send password if it's been provided
+        const updateData = { name: form.name, email: form.email, role: form.role }
+        if (form.password) updateData.password = form.password
+        await api.put(`/users/${editingId}`, updateData)
         toast.success('User updated successfully')
       } else {
+        // On create, password is required
         await api.post('/users', form)
         toast.success('User created successfully')
       }
-      setForm({ name: '', email: '', role: 'customer' })
+      setForm({ name: '', email: '', password: '', role: 'customer' })
       setEditingId(null)
       setShowModal(false)
       fetchUsers()
@@ -67,7 +71,7 @@ export default function UserManagement() {
   const handleClose = () => {
     setShowModal(false)
     setEditingId(null)
-    setForm({ name: '', email: '', role: 'customer' })
+    setForm({ name: '', email: '', password: '', role: 'customer' })
   }
 
   if (loading) return <LoadingSpinner />
@@ -165,6 +169,19 @@ export default function UserManagement() {
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password {editingId && <span className="text-xs text-gray-500">(leave empty to keep current)</span>}
+                </label>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder={editingId ? "Leave empty to keep current password" : "Min 8 characters"}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required={!editingId}
                 />
               </div>
               <div>

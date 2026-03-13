@@ -73,9 +73,15 @@ class UserController extends Controller
         $validated = $request->validate([
             'name'   => 'sometimes|string|max:255',
             'email'  => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'sometimes|string|min:8',
             'role'   => 'sometimes|in:admin,cashier,customer',
             'is_active' => 'sometimes|boolean',
         ]);
+
+        // Hash password if provided
+        if (isset($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        }
 
         $user->update($validated);
 

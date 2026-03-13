@@ -21,7 +21,7 @@ export default function Navbar({ onMenuToggle }) {
           </svg>
         </button>
         <Link to="/" className="flex items-center gap-2 font-bold text-orange-500 text-lg">
-          🍽️ <span className="hidden sm:inline">CanteenMS</span>
+          🍽️ <span className="hidden sm:inline">CampusBite</span>
         </Link>
       </div>
 

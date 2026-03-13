@@ -52,7 +52,7 @@ export default function Sidebar({ open, onClose }) {
       >
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-5 border-b border-gray-700">
-          <span className="font-bold text-lg text-orange-400">🍽️ CanteenMS</span>
+          <span className="font-bold text-lg text-orange-400">🍽️ CampusBite</span>
           <button onClick={onClose} className="md:hidden text-gray-400 hover:text-white">
             <X className="h-5 w-5" />
           </button>

@@ -171,10 +171,10 @@ export default function MyOrders() {
                   <tbody>
                     {selectedOrder.order_items && Array.isArray(selectedOrder.order_items) && selectedOrder.order_items.map((item) => (
                       <tr key={item.id} className="border-b border-gray-100">
-                        <td className="py-3 text-gray-800">{item.menu_item_name}</td>
+                        <td className="py-3 text-gray-800">{item.menu_item?.name}</td>
                         <td className="py-3 text-center text-gray-800">{item.quantity}</td>
                         <td className="py-3 text-right text-gray-800">
-                          ₱{Number(item.price).toLocaleString('en-PH', {
+                          ₱{Number(item.unit_price).toLocaleString('en-PH', {
                             minimumFractionDigits: 2,
                           })}
                         </td>
