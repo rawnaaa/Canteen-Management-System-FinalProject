@@ -1,13 +1,21 @@
-import React from 'react';
-
-const LoadingSpinner = () => (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
-        <div className="spinner" style={{
-            width: '40px', height: '40px', border: '4px solid #f3f3f3',
-            borderTop: '4px solid #4e73df', borderRadius: '50%', animation: 'spin 1s linear infinite'
-        }}></div>
-        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+export default function LoadingSpinner({ size = 'md', text = '' }) {
+  const sizes = { sm: 'h-5 w-5', md: 'h-8 w-8', lg: 'h-12 w-12' }
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-10">
+      <svg
+        className={`animate-spin text-orange-500 ${sizes[size]}`}
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+        />
+      </svg>
+      {text && <p className="text-sm text-gray-500">{text}</p>}
     </div>
-);
-
-export default LoadingSpinner;
+  )
+}

@@ -1,35 +1,30 @@
-import api from './api';
+import api from './api'
 
-class OrderService {
-  async getOrders(params = {}) {
-    const response = await api.get('/orders', { params });
-    return response.data;
-  }
+const orderService = {
+  async getAll(params = {}) {
+    const { data } = await api.get('/orders', { params })
+    return data
+  },
 
-  async getOrder(id) {
-    const response = await api.get(`/orders/${id}`);
-    return response.data;
-  }
+  async getOne(id) {
+    const { data } = await api.get(`/orders/${id}`)
+    return data
+  },
 
-  async createOrder(orderData) {
-    const response = await api.post('/orders', orderData);
-    return response.data;
-  }
+  async create(payload) {
+    const { data } = await api.post('/orders', payload)
+    return data
+  },
 
-  async updateOrderStatus(id, status) {
-    const response = await api.patch(`/orders/${id}/status`, { status });
-    return response.data;
-  }
+  async updateStatus(id, status) {
+    const { data } = await api.patch(`/orders/${id}/status`, { status })
+    return data
+  },
 
-  async getOrderQueue() {
-    const response = await api.get('/queue/orders');
-    return response.data;
-  }
-
-  async getMyOrders() {
-    const response = await api.get('/my-orders');
-    return response.data;
-  }
+  async destroy(id) {
+    const { data } = await api.delete(`/orders/${id}`)
+    return data
+  },
 }
 
-export default new OrderService();
+export default orderService

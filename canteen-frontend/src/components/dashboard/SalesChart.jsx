@@ -40,8 +40,8 @@ const SalesChart = ({ dateRange }) => {
 
   const fetchSalesData = async () => {
     try {
-      const response = await api.get('/reports/sales', { params: dateRange });
-      const data = response.data || [];
+      const response = await api.get('/reports/daily-sales', { params: dateRange });
+      const data = response.data?.data || [];
 
       setChartData({
         labels: data.map(item => item.date || ''),

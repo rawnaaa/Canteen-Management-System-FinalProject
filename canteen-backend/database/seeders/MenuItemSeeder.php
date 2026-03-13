@@ -2,90 +2,78 @@
 
 namespace Database\Seeders;
 
-use App\Models\MenuItem;
-use App\Models\Category;
 use Illuminate\Database\Seeder;
+use App\Models\Category;
+use App\Models\MenuItem;
 
 class MenuItemSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-        $categories = Category::all()->keyBy('name');
-        
-        $menuItems = [
-            // Meals
-            ['Chicken Rice Bowl', 'Grilled chicken with rice and vegetables', 8.99, 'Meals', 50, 10],
-            ['Beef Noodle Soup', 'Savory beef broth with noodles and vegetables', 9.99, 'Meals', 40, 8],
-            ['Vegetable Fried Rice', 'Fried rice with mixed vegetables', 6.99, 'Meals', 60, 10],
-            ['Fish and Chips', 'Battered fish with french fries', 10.99, 'Meals', 35, 5],
-            ['Spaghetti Bolognese', 'Pasta with meat sauce', 8.99, 'Meals', 45, 8],
-            ['Chicken Curry', 'Spicy chicken curry with rice', 9.99, 'Meals', 40, 8],
-            ['Beef Steak', 'Grilled beef steak with mashed potatoes', 14.99, 'Meals', 30, 5],
-            ['Vegetable Stir Fry', 'Mixed vegetables stir-fried in oyster sauce', 7.99, 'Meals', 45, 8],
-            
-            // Snacks
-            ['French Fries', 'Crispy golden french fries', 3.99, 'Snacks', 100, 15],
-            ['Onion Rings', 'Crispy battered onion rings', 4.99, 'Snacks', 80, 12],
-            ['Chicken Wings', 'Spicy chicken wings (6 pcs)', 7.99, 'Snacks', 60, 10],
-            ['Spring Rolls', 'Vegetable spring rolls (4 pcs)', 4.99, 'Snacks', 70, 10],
-            ['Garlic Bread', 'Toasted bread with garlic butter', 3.99, 'Snacks', 90, 15],
-            ['Nachos', 'Tortilla chips with cheese sauce', 5.99, 'Snacks', 65, 10],
-            ['Samosa', 'Spiced vegetable samosa (3 pcs)', 4.99, 'Snacks', 55, 8],
-            ['Mozzarella Sticks', 'Fried mozzarella sticks (6 pcs)', 6.99, 'Snacks', 50, 8],
-            
-            // Beverages
-            ['Coca Cola', 'Regular cola drink (330ml)', 1.99, 'Beverages', 200, 30],
-            ['Mineral Water', 'Bottled water (500ml)', 1.00, 'Beverages', 300, 40],
-            ['Orange Juice', 'Fresh orange juice', 3.99, 'Beverages', 80, 15],
-            ['Iced Coffee', 'Cold brewed coffee with milk', 3.99, 'Beverages', 70, 12],
-            ['Hot Tea', 'Assorted hot tea bags', 2.50, 'Beverages', 150, 20],
-            ['Milkshake', 'Vanilla/chocolate/strawberry milkshake', 4.99, 'Beverages', 60, 10],
-            ['Lemonade', 'Fresh squeezed lemonade', 3.50, 'Beverages', 85, 15],
-            ['Smoothie', 'Mixed fruit smoothie', 5.99, 'Beverages', 50, 8],
-            
-            // Desserts
-            ['Chocolate Cake', 'Rich chocolate cake slice', 4.99, 'Desserts', 40, 8],
-            ['Ice Cream', 'Vanilla/chocolate/strawberry scoop', 2.99, 'Desserts', 100, 15],
-            ['Apple Pie', 'Traditional apple pie slice', 3.99, 'Desserts', 45, 8],
-            ['Brownie', 'Chocolate brownie with nuts', 3.50, 'Desserts', 55, 10],
-            ['Cheesecake', 'New York style cheesecake', 5.99, 'Desserts', 35, 6],
-            ['Fruit Salad', 'Fresh mixed fruit salad', 4.99, 'Desserts', 40, 7],
-            ['Pudding', 'Vanilla/chocolate pudding', 3.50, 'Desserts', 60, 10],
-            ['Donuts', 'Glazed donuts (3 pcs)', 3.99, 'Desserts', 75, 12],
-            
-            // Combos
-            ['Chicken Rice Combo', 'Chicken rice bowl with drink and fries', 14.99, 'Combos', 30, 5],
-            ['Burger Combo', 'Beef burger with fries and drink', 12.99, 'Combos', 35, 6],
-            ['Pizza Combo', 'Personal pizza with drink', 11.99, 'Combos', 30, 5],
-            ['Student Meal', 'Small meal with drink and snack', 9.99, 'Combos', 45, 8],
-            ['Family Meal', '4 rice meals with 2 drinks', 39.99, 'Combos', 15, 3],
-            
-            // Breakfast
-            ['Breakfast Set', 'Eggs, bacon, toast, coffee', 8.99, 'Breakfast', 40, 8],
-            ['Pancakes', '3 pancakes with syrup and butter', 6.99, 'Breakfast', 45, 8],
-            ['Omelette', '3-egg omelette with toast', 7.99, 'Breakfast', 35, 6],
-            ['Cereal Bowl', 'Assorted cereal with milk', 4.99, 'Breakfast', 50, 10],
-            
-            // Vegetarian
-            ['Veggie Burger', 'Plant-based patty burger', 8.99, 'Vegetarian', 35, 6],
-            ['Tofu Salad', 'Fresh salad with grilled tofu', 7.99, 'Vegetarian', 30, 5],
-            ['Veggie Wrap', 'Vegetable wrap with hummus', 6.99, 'Vegetarian', 40, 7],
-            ['Quinoa Bowl', 'Quinoa with roasted vegetables', 8.99, 'Vegetarian', 30, 5],
+        $categories = Category::pluck('id', 'name');
+
+        $items = [
+            // ── MEALS ──────────────────────────────────────────────────────────
+            ['category' => 'Meals', 'name' => 'Chicken Adobo with Rice',   'description' => 'Classic Filipino chicken adobo served with steamed white rice.',           'price' => 75.00,  'stock' => 50],
+            ['category' => 'Meals', 'name' => 'Pork Sinigang',             'description' => 'Sour tamarind-based pork soup with vegetables.',                           'price' => 85.00,  'stock' => 40],
+            ['category' => 'Meals', 'name' => 'Beef Caldereta',            'description' => 'Rich tomato-based beef stew with potatoes and carrots.',                   'price' => 95.00,  'stock' => 35],
+            ['category' => 'Meals', 'name' => 'Fried Tilapia with Rice',   'description' => 'Crispy fried tilapia served with steamed rice and sawsawan.',              'price' => 70.00,  'stock' => 45],
+            ['category' => 'Meals', 'name' => 'Pancit Canton',             'description' => 'Stir-fried egg noodles with vegetables and meat.',                         'price' => 65.00,  'stock' => 55],
+            ['category' => 'Meals', 'name' => 'Bicol Express',             'description' => 'Spicy pork with coconut milk and chili.',                                  'price' => 80.00,  'stock' => 30],
+            ['category' => 'Meals', 'name' => 'Kare-Kare',                 'description' => 'Oxtail in peanut sauce with fermented shrimp paste.',                     'price' => 110.00, 'stock' => 25],
+
+            // ── SNACKS ─────────────────────────────────────────────────────────
+            ['category' => 'Snacks', 'name' => 'Lumpia Shanghai',          'description' => 'Crispy Filipino spring rolls with sweet and sour sauce.',                  'price' => 35.00,  'stock' => 80],
+            ['category' => 'Snacks', 'name' => 'Cheese Sticks',            'description' => 'Golden fried mozzarella sticks with dipping sauce.',                      'price' => 30.00,  'stock' => 70],
+            ['category' => 'Snacks', 'name' => 'Tokwa\'t Baboy',           'description' => 'Fried tofu and pork ears with vinegar-soy dipping sauce.',                'price' => 45.00,  'stock' => 40],
+            ['category' => 'Snacks', 'name' => 'Fishball (10 pcs)',        'description' => 'Deep-fried fishballs served with sweet and spicy sauce.',                  'price' => 20.00,  'stock' => 100],
+            ['category' => 'Snacks', 'name' => 'Kikiam',                   'description' => 'Mixed meat and vegetables wrapped in tofu skin, deep-fried.',              'price' => 25.00,  'stock' => 90],
+            ['category' => 'Snacks', 'name' => 'French Fries',             'description' => 'Crispy golden fries with ketchup or cheese dip.',                         'price' => 40.00,  'stock' => 60],
+
+            // ── BEVERAGES ──────────────────────────────────────────────────────
+            ['category' => 'Beverages', 'name' => 'Bottled Water 500ml',   'description' => 'Purified drinking water.',                                                 'price' => 15.00,  'stock' => 200],
+            ['category' => 'Beverages', 'name' => 'Softdrinks (Regular)',  'description' => 'Coke, Sprite, or Royal in can.',                                           'price' => 25.00,  'stock' => 150],
+            ['category' => 'Beverages', 'name' => 'Iced Coffee',           'description' => 'Freshly brewed coffee with ice and your choice of milk.',                  'price' => 45.00,  'stock' => 60],
+            ['category' => 'Beverages', 'name' => 'Fresh Buko Juice',      'description' => 'Natural coconut water straight from the buko.',                            'price' => 35.00,  'stock' => 50],
+            ['category' => 'Beverages', 'name' => 'Mango Shake',           'description' => 'Blended fresh mangoes with milk and sugar.',                               'price' => 50.00,  'stock' => 40],
+            ['category' => 'Beverages', 'name' => 'Hot Chocolate',         'description' => 'Rich creamy hot tsokolate.',                                               'price' => 30.00,  'stock' => 55],
+            ['category' => 'Beverages', 'name' => 'Calamansi Juice',       'description' => 'Refreshing local lime juice, sweetened or unsweetened.',                   'price' => 20.00,  'stock' => 75],
+
+            // ── DESSERTS ───────────────────────────────────────────────────────
+            ['category' => 'Desserts', 'name' => 'Halo-Halo',              'description' => 'Mixed shaved ice dessert with fruits, beans, and leche flan.',             'price' => 55.00,  'stock' => 30],
+            ['category' => 'Desserts', 'name' => 'Maja Blanca',            'description' => 'Creamy coconut pudding topped with latik.',                                'price' => 25.00,  'stock' => 40],
+            ['category' => 'Desserts', 'name' => 'Buko Pandan',            'description' => 'Chilled coconut and pandan gelatin salad.',                                'price' => 30.00,  'stock' => 35],
+            ['category' => 'Desserts', 'name' => 'Turon',                  'description' => 'Banana and jackfruit wrapped in lumpia wrapper, fried with sugar.',        'price' => 20.00,  'stock' => 50],
+            ['category' => 'Desserts', 'name' => 'Leche Flan',             'description' => 'Classic Filipino caramel custard.',                                        'price' => 35.00,  'stock' => 30],
+
+            // ── COMBOS ─────────────────────────────────────────────────────────
+            ['category' => 'Combos', 'name' => 'Student Meal A',           'description' => 'Rice + Chicken Adobo + Softdrinks.',                                       'price' => 85.00,  'stock' => 40],
+            ['category' => 'Combos', 'name' => 'Student Meal B',           'description' => 'Rice + Pork Sinigang + Buko Juice.',                                      'price' => 95.00,  'stock' => 35],
+            ['category' => 'Combos', 'name' => 'Snack Pack',               'description' => 'Lumpia + Fishball + Softdrinks.',                                          'price' => 65.00,  'stock' => 45],
+            ['category' => 'Combos', 'name' => 'Budget Meal',              'description' => 'Rice + Fried Tilapia + Water.',                                            'price' => 75.00,  'stock' => 50],
+
+            // ── BREAKFAST ──────────────────────────────────────────────────────
+            ['category' => 'Breakfast', 'name' => 'Tapsilog',              'description' => 'Tapa, sinangag (garlic rice), and itlog (fried egg).',                     'price' => 80.00,  'stock' => 45],
+            ['category' => 'Breakfast', 'name' => 'Longsilog',             'description' => 'Longganisa, sinangag, and fried egg.',                                     'price' => 75.00,  'stock' => 40],
+            ['category' => 'Breakfast', 'name' => 'Champorado',            'description' => 'Sweet chocolate rice porridge served with dried fish.',                    'price' => 45.00,  'stock' => 35],
+            ['category' => 'Breakfast', 'name' => 'Pan de Sal',            'description' => 'Soft Filipino bread rolls, 3 pieces per serving.',                         'price' => 15.00,  'stock' => 100],
         ];
 
-        foreach ($menuItems as [$name, $description, $price, $categoryName, $stock, $threshold]) {
-            $category = $categories[$categoryName] ?? $categories['Meals'];
-            
-            MenuItem::create([
-                'name' => $name,
-                'description' => $description,
-                'price' => $price,
-                'category_id' => $category->id,
-                'stock_quantity' => $stock,
-                'low_stock_threshold' => $threshold,
-                'is_available' => true,
-                'image' => null
-            ]);
+        foreach ($items as $item) {
+            $categoryId = $categories[$item['category']] ?? null;
+            if (! $categoryId) continue;
+
+            MenuItem::firstOrCreate(
+                ['name' => $item['name']],
+                [
+                    'category_id'         => $categoryId,
+                    'description'         => $item['description'],
+                    'price'               => $item['price'],
+                    'stock_quantity'      => $item['stock'],
+                    'low_stock_threshold' => 10,
+                    'is_available'        => true,
+                ]
+            );
         }
     }
 }

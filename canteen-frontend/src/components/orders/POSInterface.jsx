@@ -1,286 +1,196 @@
-import React, { useState, useEffect } from 'react';
-import { useCart } from '../../context/CartContext';
-import api from '../../services/api';
-import orderService from '../../services/orderService';
-import { XMarkIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+import { useState, useEffect } from 'react'
+import api from '../../services/api'
+import orderService from '../../services/orderService'
+import { useAuth } from '../../context/AuthContext'
+import LoadingSpinner from '../common/LoadingSpinner'
+import OrderReceipt from './OrderReceipt'
+import toast from 'react-hot-toast'
+import { Plus, Minus, Trash2, Search, ShoppingCart } from 'lucide-react'
 
-const POSInterface = () => {
-  const [menuItems, setMenuItems] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [orderNotes, setOrderNotes] = useState('');
-  const [processing, setProcessing] = useState(false);
-  
-  const { cartItems, addToCart, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
+export default function POSInterface() {
+  const { user } = useAuth()
+  const [menuItems, setMenuItems] = useState([])
+  const [categories, setCategories] = useState([])
+  const [cart, setCart]   = useState([])
+  const [search, setSearch] = useState('')
+  const [catFilter, setCatFilter] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [completedOrder, setCompletedOrder] = useState(null)
+  const [notes, setNotes] = useState('')
 
   useEffect(() => {
-    fetchMenuItems();
-    fetchCategories();
-  }, []);
+    Promise.all([api.get('/menu', { params: { available: 'true' } }), api.get('/categories')])
+      .then(([menuRes, catRes]) => {
+        setMenuItems(menuRes.data.data)
+        setCategories(catRes.data.data)
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
-  const fetchMenuItems = async () => {
+  const filtered = menuItems.filter((item) => {
+    const matchSearch = item.name.toLowerCase().includes(search.toLowerCase())
+    const matchCat    = catFilter ? String(item.category_id) === String(catFilter) : true
+    return matchSearch && matchCat
+  })
+
+  const addToCart = (item) => {
+    setCart((prev) => {
+      const ex = prev.find((c) => c.menu_item_id === item.id)
+      if (ex) return prev.map((c) => c.menu_item_id === item.id ? { ...c, quantity: c.quantity + 1 } : c)
+      return [...prev, { menu_item_id: item.id, name: item.name, unit_price: parseFloat(item.price), quantity: 1 }]
+    })
+  }
+
+  const updateQty = (id, delta) => {
+    setCart((prev) =>
+      prev
+        .map((c) => c.menu_item_id === id ? { ...c, quantity: c.quantity + delta } : c)
+        .filter((c) => c.quantity > 0)
+    )
+  }
+
+  const removeFromCart = (id) => setCart((prev) => prev.filter((c) => c.menu_item_id !== id))
+
+  const total = cart.reduce((s, c) => s + c.unit_price * c.quantity, 0)
+
+  const handleSubmit = async () => {
+    if (!cart.length) return toast.error('Cart is empty.')
+    setSubmitting(true)
     try {
-      const response = await api.get('/menu');
-      setMenuItems(response.data);
-    } catch (error) {
-      toast.error('Failed to load menu');
+      const payload = {
+        items: cart.map((c) => ({ menu_item_id: c.menu_item_id, quantity: c.quantity })),
+        notes,
+      }
+      const { data } = await orderService.create(payload)
+      setCompletedOrder(data.data)
+      setCart([])
+      setNotes('')
+      toast.success('Order placed!')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Order failed.')
     } finally {
-      setLoading(false);
+      setSubmitting(false)
     }
-  };
+  }
 
-  const fetchCategories = async () => {
-    try {
-      const response = await api.get('/categories');
-      setCategories(response.data);
-    } catch (error) {
-      toast.error('Failed to load categories');
-    }
-  };
+  if (loading) return <LoadingSpinner text="Loading POS…" />
 
-  const filteredItems = menuItems.filter(item => {
-    const matchesCategory = selectedCategory === 'all' || item.category_id === parseInt(selectedCategory);
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch && item.is_available;
-  });
-
-  const handlePlaceOrder = async () => {
-    if (cartItems.length === 0) {
-      toast.error('Cart is empty');
-      return;
-    }
-
-    setProcessing(true);
-    try {
-      const orderData = {
-        items: cartItems.map(item => ({
-          menu_item_id: item.id,
-          quantity: item.quantity
-        })),
-        notes: orderNotes
-      };
-
-      const response = await orderService.createOrder(orderData);
-      toast.success('Order placed successfully!');
-      clearCart();
-      setOrderNotes('');
-      
-      // Print receipt
-      handlePrintReceipt(response);
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to place order');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handlePrintReceipt = (order) => {
-    const receiptWindow = window.open('', '_blank');
-    receiptWindow.document.write(`
-      <html>
-        <head>
-          <title>Order Receipt - ${order.order_number}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .receipt { max-width: 300px; margin: 0 auto; }
-            .header { text-align: center; margin-bottom: 20px; }
-            .items { margin: 20px 0; }
-            .item { display: flex; justify-content: space-between; margin: 5px 0; }
-            .total { font-weight: bold; margin-top: 10px; padding-top: 10px; border-top: 2px dashed #000; }
-            .footer { text-align: center; margin-top: 20px; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="receipt">
-            <div class="header">
-              <h2>Canteen Management System</h2>
-              <p>Order #: ${order.order_number}</p>
-              <p>Date: ${new Date().toLocaleString()}</p>
-            </div>
-            <div class="items">
-              ${order.items.map(item => `
-                <div class="item">
-                  <span>${item.menu_item.name} x${item.quantity}</span>
-                  <span>$${parseFloat(item.subtotal).toFixed(2)}</span>
-                </div>
-              `).join('')}
-            </div>
-            <div class="total">
-              <div class="item">
-                <span>Total:</span>
-                <span>$${parseFloat(order.total_amount).toFixed(2)}</span>
-              </div>
-            </div>
-            <div class="footer">
-              <p>Thank you for your order!</p>
-            </div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); }
-          </script>
-        </body>
-      </html>
-    `);
-    receiptWindow.document.close();
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
+  if (completedOrder) {
+    return <OrderReceipt order={completedOrder} onNew={() => setCompletedOrder(null)} />
   }
 
   return (
-    <div className="h-[calc(100vh-64px)] flex">
-      {/* Menu Items Section */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Point of Sale</h1>
-          
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Search items..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-field"
-              />
-            </div>
-            
-            <div className="sm:w-48">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="input-field"
-              >
-                <option value="all">All Categories</option>
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+    <div className="flex flex-col lg:flex-row gap-5 h-full">
+      {/* Left: Menu */}
+      <div className="flex-1 space-y-4">
+        <h1 className="text-2xl font-bold text-gray-800">Point of Sale</h1>
+
+        {/* Filters */}
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search item…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-orange-400"
+            />
           </div>
+          <select
+            value={catFilter}
+            onChange={(e) => setCatFilter(e.target.value)}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400"
+          >
+            <option value="">All</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filteredItems.map(item => (
-            <div
+        {/* Items grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+          {filtered.map((item) => (
+            <button
               key={item.id}
               onClick={() => addToCart(item)}
-              className="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-lg transition-shadow"
+              className="bg-white border border-gray-100 rounded-xl p-3 text-left hover:border-orange-300 hover:shadow transition"
             >
-              <h3 className="font-semibold text-gray-900">{item.name}</h3>
-              <p className="text-sm text-gray-600 mt-1">${parseFloat(item.price).toFixed(2)}</p>
-              {item.stock_quantity <= item.low_stock_threshold && (
-                <p className="text-xs text-orange-600 mt-1">
-                  Stock: {item.stock_quantity}
-                </p>
-              )}
-            </div>
+              <p className="text-sm font-semibold text-gray-800 truncate">{item.name}</p>
+              <p className="text-xs text-gray-400 truncate">{item.category?.name}</p>
+              <p className="text-orange-600 font-bold mt-1 text-sm">₱{Number(item.price).toFixed(2)}</p>
+              <p className="text-xs text-gray-400">Stock: {item.stock_quantity}</p>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Cart Section */}
-      <div className="w-96 bg-gray-50 border-l flex flex-col">
-        <div className="p-4 border-b bg-white">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <ShoppingCartIcon className="h-5 w-5" />
-            Current Order
-          </h2>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4">
-          {cartItems.length === 0 ? (
-            <p className="text-gray-500 text-center mt-8">Cart is empty</p>
-          ) : (
-            <div className="space-y-4">
-              {cartItems.map(item => (
-                <div key={item.id} className="bg-white rounded-lg shadow-sm p-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{item.name}</h3>
-                      <p className="text-sm text-gray-600">${parseFloat(item.price).toFixed(2)} each</p>
-                    </div>
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-gray-400 hover:text-red-500"
-                    >
-                      <XMarkIcon className="h-5 w-5" />
-                    </button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center border rounded">
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="px-2 py-1 text-gray-600 hover:bg-gray-100"
-                      >
-                        -
-                      </button>
-                      <span className="px-3 py-1 text-gray-800">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="px-2 py-1 text-gray-600 hover:bg-gray-100"
-                        disabled={item.quantity >= item.stock_quantity}
-                      >
-                        +
-                      </button>
-                    </div>
-                    <span className="font-medium text-primary-600">
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+      {/* Right: Cart */}
+      <div className="w-full lg:w-80 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col">
+        <div className="flex items-center gap-2 p-4 border-b">
+          <ShoppingCart className="h-5 w-5 text-orange-500" />
+          <h2 className="font-bold text-gray-800">Order Cart</h2>
+          {cart.length > 0 && (
+            <span className="ml-auto rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-700 font-bold">
+              {cart.length}
+            </span>
           )}
         </div>
 
-        <div className="p-4 border-t bg-white">
-          <div className="space-y-4">
-            <textarea
-              placeholder="Order notes..."
-              value={orderNotes}
-              onChange={(e) => setOrderNotes(e.target.value)}
-              className="input-field text-sm"
-              rows="2"
-            />
+        {/* Cart items */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {cart.length === 0 ? (
+            <p className="text-center text-gray-400 text-sm py-10">No items yet.</p>
+          ) : (
+            cart.map((c) => (
+              <div key={c.menu_item_id} className="flex items-center gap-2 rounded-lg bg-gray-50 p-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{c.name}</p>
+                  <p className="text-xs text-gray-500">₱{(c.unit_price * c.quantity).toFixed(2)}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => updateQty(c.menu_item_id, -1)} className="rounded p-1 hover:bg-gray-200">
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <span className="w-6 text-center text-sm font-semibold">{c.quantity}</span>
+                  <button onClick={() => updateQty(c.menu_item_id, 1)} className="rounded p-1 hover:bg-gray-200">
+                    <Plus className="h-3 w-3" />
+                  </button>
+                  <button onClick={() => removeFromCart(c.menu_item_id)} className="rounded p-1 hover:bg-red-100 text-red-400">
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
 
-            <div className="flex justify-between items-center text-lg font-bold">
-              <span>Total:</span>
-              <span className="text-primary-600">${cartTotal.toFixed(2)}</span>
-            </div>
+        {/* Notes */}
+        <div className="px-3 pb-2">
+          <textarea
+            placeholder="Order notes (optional)…"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-orange-400"
+          />
+        </div>
 
-            <button
-              onClick={handlePlaceOrder}
-              disabled={cartItems.length === 0 || processing}
-              className="btn-primary w-full py-3 text-lg disabled:opacity-50"
-            >
-              {processing ? 'Processing...' : 'Place Order'}
-            </button>
-
-            {cartItems.length > 0 && (
-              <button
-                onClick={clearCart}
-                className="btn-secondary w-full"
-              >
-                Clear Cart
-              </button>
-            )}
+        {/* Total & submit */}
+        <div className="p-4 border-t">
+          <div className="flex justify-between mb-3">
+            <span className="font-semibold text-gray-700">Total</span>
+            <span className="font-bold text-orange-600 text-lg">₱{total.toFixed(2)}</span>
           </div>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting || !cart.length}
+            className="w-full rounded-lg bg-orange-500 py-3 text-white font-bold hover:bg-orange-600 transition disabled:opacity-50"
+          >
+            {submitting ? 'Placing Order…' : 'Place Order'}
+          </button>
         </div>
       </div>
     </div>
-  );
-};
-
-export default POSInterface;
+  )
+}

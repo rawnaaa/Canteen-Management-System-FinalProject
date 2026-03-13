@@ -2,47 +2,55 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 
 class UserSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-        // Clear existing users first
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        User::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
-
-        // Create admin
-        User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@canteen.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'phone' => '1234567890'
-        ]);
-
-        // Create cashier
-        User::create([
-            'name' => 'Cashier User',
-            'email' => 'cashier@canteen.com',
-            'password' => Hash::make('password'),
-            'role' => 'cashier',
-            'phone' => '1234567891'
-        ]);
-
-        // Create 10 customer accounts
-        for ($i = 1; $i <= 10; $i++) {
-            User::create([
-                'name' => "Customer {$i}",
-                'email' => "customer{$i}@canteen.com",
+        // Admin account
+        User::firstOrCreate(
+            ['email' => 'admin@canteen.com'],
+            [
+                'name'     => 'Admin User',
                 'password' => Hash::make('password'),
-                'role' => 'customer',
-                'phone' => '123456789' . $i
-            ]);
+                'role'     => 'admin',
+                'is_active' => true,
+            ]
+        );
+
+        // Cashier account
+        User::firstOrCreate(
+            ['email' => 'cashier@canteen.com'],
+            [
+                'name'     => 'Cashier User',
+                'password' => Hash::make('password'),
+                'role'     => 'cashier',
+                'is_active' => true,
+            ]
+        );
+
+        // Sample customers
+        $customers = [
+            ['name' => 'Juan Dela Cruz',   'email' => 'juan@student.edu'],
+            ['name' => 'Maria Santos',     'email' => 'maria@student.edu'],
+            ['name' => 'Pedro Reyes',      'email' => 'pedro@student.edu'],
+            ['name' => 'Ana Garcia',       'email' => 'ana@student.edu'],
+            ['name' => 'Jose Mendoza',     'email' => 'jose@student.edu'],
+        ];
+
+        foreach ($customers as $customer) {
+            User::firstOrCreate(
+                ['email' => $customer['email']],
+                [
+                    'name'      => $customer['name'],
+                    'password'  => Hash::make('password'),
+                    'role'      => 'customer',
+                    'is_active' => true,
+                ]
+            );
         }
     }
 }

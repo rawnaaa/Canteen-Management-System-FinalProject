@@ -2,118 +2,97 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\MenuItem;
 use App\Models\User;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\InventoryLog;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class OrderSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-        $customers = User::where('role', 'customer')->get();
         $menuItems = MenuItem::all();
-        $statuses = ['pending', 'preparing', 'ready', 'completed', 'cancelled'];
-        
-        // Create 200 orders over the past 30 days
-        for ($i = 1; $i <= 200; $i++) {
+        $customers = User::where('role', 'customer')->get();
+        $cashiers  = User::whereIn('role', ['cashier', 'admin'])->get();
+        $statuses  = ['pending', 'preparing', 'ready', 'completed', 'cancelled'];
+
+        // Generate 200 orders spread over the past 60 days
+        for ($i = 0; $i < 200; $i++) {
+            $createdAt = Carbon::now()->subDays(rand(0, 59))->subHours(rand(0, 8))->subMinutes(rand(0, 59));
+
+            // 80% completed, 10% cancelled, 10% other statuses
+            $rand = rand(1, 100);
+            if ($rand <= 80) {
+                $status = 'completed';
+            } elseif ($rand <= 90) {
+                $status = 'cancelled';
+            } else {
+                $status = $statuses[array_rand(['pending', 'preparing', 'ready'])];
+            }
+
+            $completedAt = null;
+            if ($status === 'completed') {
+                $completedAt = (clone $createdAt)->addMinutes(rand(10, 45));
+            }
+
             $customer = $customers->random();
-            $orderDate = now()->subDays(rand(0, 30))->subHours(rand(0, 23))->subMinutes(rand(0, 59));
-            $status = $this->getWeightedStatus($orderDate);
-            
-            // Create order
+            $cashier  = $cashiers->random();
+
             $order = Order::create([
-                'order_number' => 'ORD-' . date('Ymd', strtotime($orderDate)) . '-' . str_pad($i, 4, '0', STR_PAD_LEFT),
-                'user_id' => $customer->id,
-                'total_amount' => 0, // Will update after adding items
-                'status' => $status,
-                'notes' => rand(0, 1) ? 'Special instructions: ' . $this->getRandomNote() : null,
-                'created_at' => $orderDate,
-                'updated_at' => $orderDate
+                'order_number' => 'ORD-' . strtoupper(Str::random(8)),
+                'user_id'      => $customer->id,
+                'cashier_id'   => $cashier->id,
+                'total_amount' => 0, // will recalculate
+                'status'       => $status,
+                'notes'        => rand(0, 1) ? 'No chili please.' : null,
+                'completed_at' => $completedAt,
+                'created_at'   => $createdAt,
+                'updated_at'   => $createdAt,
             ]);
-            
-            // Add random items to order
-            $itemCount = rand(1, 5);
-            $totalAmount = 0;
-            
-            for ($j = 0; $j < $itemCount; $j++) {
-                $menuItem = $menuItems->random();
+
+            // Add 1–4 random items per order
+            $selectedItems = $menuItems->random(rand(1, 4));
+            $totalAmount   = 0;
+
+            foreach ($selectedItems as $menuItem) {
                 $quantity = rand(1, 3);
-                $subtotal = $menuItem->price * $quantity;
+                $unitPrice = $menuItem->price;
+                $subtotal  = $unitPrice * $quantity;
                 $totalAmount += $subtotal;
-                
+
                 OrderItem::create([
-                    'order_id' => $order->id,
+                    'order_id'     => $order->id,
                     'menu_item_id' => $menuItem->id,
-                    'quantity' => $quantity,
-                    'price' => $menuItem->price,
-                    'subtotal' => $subtotal,
-                    'created_at' => $orderDate,
-                    'updated_at' => $orderDate
+                    'quantity'     => $quantity,
+                    'unit_price'   => $unitPrice,
+                    'subtotal'     => $subtotal,
+                    'created_at'   => $createdAt,
+                    'updated_at'   => $createdAt,
                 ]);
-                
-                // Update stock for completed orders
+
+                // Log inventory deduction for completed orders only
                 if ($status === 'completed') {
-                    $menuItem->decrement('stock_quantity', $quantity);
+                    InventoryLog::create([
+                        'menu_item_id'    => $menuItem->id,
+                        'user_id'         => $cashier->id,
+                        'quantity_change' => -$quantity,
+                        'quantity_before' => $menuItem->stock_quantity + $quantity,
+                        'quantity_after'  => $menuItem->stock_quantity,
+                        'type'            => 'order',
+                        'reason'          => 'Seeded order #' . $order->order_number,
+                        'order_id'        => $order->id,
+                        'created_at'      => $createdAt,
+                        'updated_at'      => $createdAt,
+                    ]);
                 }
             }
-            
-            // Update order total
+
+            // Update total
             $order->update(['total_amount' => $totalAmount]);
         }
-    }
-    
-    private function getWeightedStatus($orderDate)
-    {
-        $daysAgo = now()->diffInDays($orderDate);
-        
-        // Older orders are more likely to be completed
-        if ($daysAgo > 7) {
-            $status = 'completed';
-        } elseif ($daysAgo > 3) {
-            $statuses = ['completed' => 80, 'cancelled' => 20];
-            $status = $this->getRandomWeightedElement($statuses);
-        } else {
-            $statuses = ['pending' => 10, 'preparing' => 20, 'ready' => 20, 'completed' => 40, 'cancelled' => 10];
-            $status = $this->getRandomWeightedElement($statuses);
-        }
-        
-        return $status;
-    }
-    
-    private function getRandomWeightedElement($array)
-    {
-        $total = array_sum($array);
-        $rand = rand(1, $total);
-        $sum = 0;
-        
-        foreach ($array as $key => $value) {
-            $sum += $value;
-            if ($rand <= $sum) {
-                return $key;
-            }
-        }
-        
-        return array_key_first($array);
-    }
-    
-    private function getRandomNote()
-    {
-        $notes = [
-            'No onions please',
-            'Extra spicy',
-            'Less oil',
-            'With extra sauce',
-            'Make it mild',
-            'Allergic to nuts',
-            'Need utensils',
-            'Take away',
-            'Dine in',
-            'Call upon arrival'
-        ];
-        
-        return $notes[array_rand($notes)];
     }
 }

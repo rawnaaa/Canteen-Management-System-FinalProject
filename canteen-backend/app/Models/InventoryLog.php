@@ -10,10 +10,23 @@ class InventoryLog extends Model
     use HasFactory;
 
     protected $fillable = [
-        'menu_item_id', 'previous_quantity', 'new_quantity', 
-        'quantity_change', 'reason', 'user_id'
+        'menu_item_id',
+        'user_id',
+        'quantity_change',
+        'quantity_before',
+        'quantity_after',
+        'type',
+        'reason',
+        'order_id',
     ];
 
+    protected $casts = [
+        'quantity_change' => 'integer',
+        'quantity_before' => 'integer',
+        'quantity_after' => 'integer',
+    ];
+
+    // Relationships
     public function menuItem()
     {
         return $this->belongsTo(MenuItem::class);
@@ -22,5 +35,10 @@ class InventoryLog extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
     }
 }

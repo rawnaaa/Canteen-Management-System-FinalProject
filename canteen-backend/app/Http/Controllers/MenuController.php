@@ -3,166 +3,163 @@
 namespace App\Http\Controllers;
 
 use App\Models\MenuItem;
-use App\Models\InventoryLog;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
 
 class MenuController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * GET /api/menu
+     */
+    public function index(Request $request): JsonResponse
     {
         $query = MenuItem::with('category');
 
-        if ($request->has('category')) {
-            $query->where('category_id', $request->category);
+        // Filter by category
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->category_id);
         }
 
-        if ($request->has('search')) {
+        // Filter by availability
+        if ($request->has('available') && $request->available === 'true') {
+            $query->available();
+        }
+
+        // Search by name
+        if ($request->has('search') && $request->search !== '') {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        if ($request->has('available')) {
-            $query->where('is_available', $request->available);
+        // Low stock filter
+        if ($request->has('low_stock') && $request->low_stock === 'true') {
+            $query->lowStock();
         }
 
-        $menuItems = $query->get();
-        return response()->json($menuItems);
+        $menuItems = $query->orderBy('name')->get();
+
+        // Append is_low_stock computed attribute
+        $menuItems->each(function ($item) {
+            $item->append('is_low_stock');
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $menuItems,
+        ]);
     }
 
-    public function store(Request $request)
+    /**
+     * POST /api/menu
+     */
+    public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'stock_quantity' => 'required|integer|min:0',
-            'low_stock_threshold' => 'required|integer|min:1',
-            'image' => 'nullable|image|max:2048'
+        $validated = $request->validate([
+            'category_id'         => 'required|exists:categories,id',
+            'name'                => 'required|string|max:255',
+            'description'         => 'nullable|string',
+            'price'               => 'required|numeric|min:0',
+            'stock_quantity'      => 'required|integer|min:0',
+            'low_stock_threshold' => 'sometimes|integer|min:0',
+            'is_available'        => 'boolean',
+            'image'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $data = $request->except('image');
-        
+        // Handle image upload
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('menu-items', 'public');
-            $data['image'] = $path;
+            $validated['image'] = $request->file('image')->store('menu-images', 'public');
         }
 
-        $menuItem = MenuItem::create($data);
+        $menuItem = MenuItem::create($validated);
+        $menuItem->load('category');
+        $menuItem->append('is_low_stock');
 
-        // Create inventory log
-        InventoryLog::create([
-            'menu_item_id' => $menuItem->id,
-            'previous_quantity' => 0,
-            'new_quantity' => $menuItem->stock_quantity,
-            'quantity_change' => $menuItem->stock_quantity,
-            'reason' => 'Initial stock',
-            'user_id' => Auth::id()
-        ]);
-
-        return response()->json($menuItem->load('category'), 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Menu item created successfully.',
+            'data'    => $menuItem,
+        ], 201);
     }
 
-    public function show(MenuItem $menuItem)
+    /**
+     * GET /api/menu/{id}
+     */
+    public function show(MenuItem $menuItem): JsonResponse
     {
-        return response()->json($menuItem->load('category'));
+        $menuItem->load('category');
+        $menuItem->append('is_low_stock');
+
+        return response()->json([
+            'success' => true,
+            'data'    => $menuItem,
+        ]);
     }
 
-    public function update(Request $request, MenuItem $menuItem)
+    /**
+     * PUT /api/menu/{id}
+     */
+    public function update(Request $request, MenuItem $menuItem): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'stock_quantity' => 'required|integer|min:0',
-            'low_stock_threshold' => 'required|integer|min:1',
-            'image' => 'nullable|image|max:2048'
+        $validated = $request->validate([
+            'category_id'         => 'sometimes|exists:categories,id',
+            'name'                => 'sometimes|string|max:255',
+            'description'         => 'nullable|string',
+            'price'               => 'sometimes|numeric|min:0',
+            'stock_quantity'      => 'sometimes|integer|min:0',
+            'low_stock_threshold' => 'sometimes|integer|min:0',
+            'is_available'        => 'boolean',
+            'image'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $data = $request->except('image');
-        $oldQuantity = $menuItem->stock_quantity;
-
+        // Handle image upload
         if ($request->hasFile('image')) {
-            // Delete old image
+            // Delete old image if exists
             if ($menuItem->image) {
                 Storage::disk('public')->delete($menuItem->image);
             }
-            $path = $request->file('image')->store('menu-items', 'public');
-            $data['image'] = $path;
+            $validated['image'] = $request->file('image')->store('menu-images', 'public');
         }
 
-        $menuItem->update($data);
+        $menuItem->update($validated);
+        $menuItem->load('category');
+        $menuItem->append('is_low_stock');
 
-        // Log inventory change if quantity changed
-        if ($oldQuantity != $menuItem->stock_quantity) {
-            InventoryLog::create([
-                'menu_item_id' => $menuItem->id,
-                'previous_quantity' => $oldQuantity,
-                'new_quantity' => $menuItem->stock_quantity,
-                'quantity_change' => $menuItem->stock_quantity - $oldQuantity,
-                'reason' => 'Manual update',
-                'user_id' => Auth::id()
-            ]);
-        }
-
-        return response()->json($menuItem->load('category'));
+        return response()->json([
+            'success' => true,
+            'message' => 'Menu item updated successfully.',
+            'data'    => $menuItem,
+        ]);
     }
 
-    public function destroy(MenuItem $menuItem)
+    /**
+     * DELETE /api/menu/{id}
+     */
+    public function destroy(MenuItem $menuItem): JsonResponse
     {
         if ($menuItem->image) {
             Storage::disk('public')->delete($menuItem->image);
         }
-        
+
         $menuItem->delete();
-        return response()->json(['message' => 'Menu item deleted successfully']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Menu item deleted successfully.',
+        ]);
     }
 
-    public function toggleAvailability(MenuItem $menuItem)
+    /**
+     * PATCH /api/menu/{id}/toggle-availability
+     */
+    public function toggleAvailability(MenuItem $menuItem): JsonResponse
     {
-        $menuItem->update([
-            'is_available' => !$menuItem->is_available
+        $menuItem->update(['is_available' => ! $menuItem->is_available]);
+        $menuItem->append('is_low_stock');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Availability updated.',
+            'data'    => $menuItem,
         ]);
-
-        return response()->json($menuItem);
-    }
-
-    public function updateStock(Request $request, MenuItem $menuItem)
-    {
-        $request->validate([
-            'quantity' => 'required|integer',
-            'reason' => 'required|string'
-        ]);
-
-        $oldQuantity = $menuItem->stock_quantity;
-        $newQuantity = $oldQuantity + $request->quantity;
-
-        if ($newQuantity < 0) {
-            return response()->json(['message' => 'Insufficient stock'], 400);
-        }
-
-        $menuItem->update(['stock_quantity' => $newQuantity]);
-
-        InventoryLog::create([
-            'menu_item_id' => $menuItem->id,
-            'previous_quantity' => $oldQuantity,
-            'new_quantity' => $newQuantity,
-            'quantity_change' => $request->quantity,
-            'reason' => $request->reason,
-            'user_id' => Auth::id()
-        ]);
-
-        return response()->json($menuItem);
-    }
-
-    public function lowStock()
-    {
-        $items = MenuItem::whereRaw('stock_quantity <= low_stock_threshold')
-                        ->with('category')
-                        ->get();
-        
-        return response()->json($items);
     }
 }

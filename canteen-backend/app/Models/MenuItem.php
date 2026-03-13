@@ -10,15 +10,24 @@ class MenuItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'description', 'price', 'category_id', 
-        'stock_quantity', 'low_stock_threshold', 'is_available', 'image'
+        'category_id',
+        'name',
+        'description',
+        'price',
+        'image',
+        'stock_quantity',
+        'low_stock_threshold',
+        'is_available',
     ];
 
     protected $casts = [
+        'price' => 'decimal:2',
         'is_available' => 'boolean',
-        'price' => 'decimal:2'
+        'stock_quantity' => 'integer',
+        'low_stock_threshold' => 'integer',
     ];
 
+    // Relationships
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -34,13 +43,20 @@ class MenuItem extends Model
         return $this->hasMany(InventoryLog::class);
     }
 
-    public function isLowStock()
+    // Computed attributes
+    public function getIsLowStockAttribute(): bool
     {
         return $this->stock_quantity <= $this->low_stock_threshold;
     }
 
-    public function isOutOfStock()
+    // Scopes
+    public function scopeAvailable($query)
     {
-        return $this->stock_quantity <= 0;
+        return $query->where('is_available', true)->where('stock_quantity', '>', 0);
+    }
+
+    public function scopeLowStock($query)
+    {
+        return $query->whereColumn('stock_quantity', '<=', 'low_stock_threshold');
     }
 }

@@ -9,8 +9,18 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'slug', 'description'];
+    protected $fillable = [
+        'name',
+        'description',
+        'icon',
+        'is_active',
+    ];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    // Relationships
     public function menuItems()
     {
         return $this->hasMany(MenuItem::class);

@@ -1,202 +1,227 @@
-import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
-import { PencilIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+import { useState, useEffect, useCallback } from 'react'
+import api from '../../services/api'
+import LowStockAlert from './LowStockAlert'
+import LoadingSpinner from '../common/LoadingSpinner'
+import toast from 'react-hot-toast'
+import { Package, RefreshCw, Search } from 'lucide-react'
 
-const InventoryTable = () => {
-  const [inventory, setInventory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editingItem, setEditingItem] = useState(null);
-  const [restockData, setRestockData] = useState({
-    quantity: 0,
-    reason: ''
-  });
+function AdjustModal({ item, onClose, onSaved }) {
+  const [change, setChange] = useState('')
+  const [reason, setReason] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    fetchInventory();
-  }, []);
-
-  const fetchInventory = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!change || change === '0') return toast.error('Enter a non-zero quantity.')
+    if (!reason.trim()) return toast.error('Reason is required.')
+    setSaving(true)
     try {
-      const response = await api.get('/inventory');
-      setInventory(response.data);
-    } catch (error) {
-      toast.error('Failed to load inventory');
+      await api.patch(`/inventory/${item.id}/adjust`, {
+        quantity_change: parseInt(change),
+        reason,
+      })
+      toast.success('Stock adjusted.')
+      onSaved()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Adjustment failed.')
     } finally {
-      setLoading(false);
+      setSaving(false)
     }
-  };
-
-  const handleUpdateStock = async (item) => {
-    try {
-      await api.patch(`/menu/${item.id}/stock`, {
-        quantity: restockData.quantity,
-        reason: restockData.reason
-      });
-      
-      toast.success('Stock updated successfully');
-      fetchInventory();
-      setEditingItem(null);
-      setRestockData({ quantity: 0, reason: '' });
-    } catch (error) {
-      toast.error('Failed to update stock');
-    }
-  };
-
-  const handleBulkRestock = async () => {
-    const lowStockItems = inventory.filter(item => item.stock_quantity <= item.low_stock_threshold);
-    
-    if (lowStockItems.length === 0) {
-      toast.info('No low stock items to restock');
-      return;
-    }
-
-    try {
-      const items = lowStockItems.map(item => ({
-        menu_item_id: item.id,
-        quantity: 20 // Restock to 20
-      }));
-
-      await api.post('/inventory/bulk-restock', {
-        items,
-        reason: 'Bulk restock - low stock items'
-      });
-
-      toast.success(`Restocked ${lowStockItems.length} items`);
-      fetchInventory();
-    } catch (error) {
-      toast.error('Failed to bulk restock');
-    }
-  };
-
-  const getStockStatus = (item) => {
-    if (item.stock_quantity <= 0) return 'out';
-    if (item.stock_quantity <= item.low_stock_threshold) return 'low';
-    return 'normal';
-  };
-
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'out': return 'bg-red-100 text-red-800';
-      case 'low': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-green-100 text-green-800';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+        <h2 className="text-lg font-bold text-gray-800">Adjust Stock</h2>
+        <p className="text-sm text-gray-500">
+          <strong>{item.name}</strong> — Current stock: <strong>{item.stock_quantity}</strong>
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Quantity Change (use negative to deduct)
+            </label>
+            <input
+              type="number"
+              value={change}
+              onChange={(e) => setChange(e.target.value)}
+              placeholder="e.g. 20 or -5"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-400"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+            <input
+              type="text"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Weekly restock"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-400"
+              required
+            />
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-lg border border-gray-300 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 rounded-lg bg-orange-500 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+            >
+              {saving ? 'Saving…' : 'Apply'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default function InventoryTable() {
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [lowStockOnly, setLowStockOnly] = useState(false)
+  const [adjustItem, setAdjustItem] = useState(null)
+
+  const fetchInventory = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = {}
+      if (lowStockOnly) params.low_stock = 'true'
+      const { data } = await api.get('/inventory', { params })
+      setItems(data.data)
+    } catch {
+      toast.error('Failed to load inventory.')
+    } finally {
+      setLoading(false)
+    }
+  }, [lowStockOnly])
+
+  useEffect(() => { fetchInventory() }, [fetchInventory])
+
+  const filtered = items.filter((i) =>
+    i.name.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const lowStockItems = items.filter((i) => i.is_low_stock && i.stock_quantity > 0)
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-gray-800">Inventory</h1>
         <button
-          onClick={handleBulkRestock}
-          className="btn-primary flex items-center gap-2"
+          onClick={fetchInventory}
+          className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
         >
-          <ArrowPathIcon className="h-5 w-5" />
-          Bulk Restock Low Items
+          <RefreshCw className="h-4 w-4" /> Refresh
         </button>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Item
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Category
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Current Stock
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Threshold
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {inventory.map((item) => {
-              const status = getStockStatus(item);
-              return (
-                <tr key={item.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{item.category?.name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{item.stock_quantity}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{item.low_stock_threshold}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(status)}`}>
-                      {status === 'out' ? 'Out of Stock' : status === 'low' ? 'Low Stock' : 'In Stock'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {editingItem === item.id ? (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="number"
-                          value={restockData.quantity}
-                          onChange={(e) => setRestockData({ ...restockData, quantity: parseInt(e.target.value) || 0 })}
-                          className="w-20 px-2 py-1 border rounded"
-                          placeholder="Qty"
-                        />
-                        <input
-                          type="text"
-                          value={restockData.reason}
-                          onChange={(e) => setRestockData({ ...restockData, reason: e.target.value })}
-                          className="w-32 px-2 py-1 border rounded"
-                          placeholder="Reason"
-                        />
-                        <button
-                          onClick={() => handleUpdateStock(item)}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditingItem(null)}
-                          className="text-gray-600 hover:text-gray-900"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setEditingItem(item.id)}
-                        className="text-primary-600 hover:text-primary-900"
-                      >
-                        <PencilIcon className="h-5 w-5" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
+      {/* Low stock alert */}
+      <LowStockAlert items={lowStockItems} />
 
-export default InventoryTable;
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search items…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-orange-400"
+          />
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={lowStockOnly}
+            onChange={(e) => setLowStockOnly(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-400"
+          />
+          <span className="text-sm text-gray-600 font-medium">Low stock only</span>
+        </label>
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <LoadingSpinner text="Loading inventory…" />
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  {['Item', 'Category', 'Price', 'Stock', 'Threshold', 'Status', 'Action'].map((h) => (
+                    <th key={h} className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-12 text-gray-400">
+                      <Package className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                      No items found.
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 font-medium text-gray-800">{item.name}</td>
+                      <td className="px-4 py-3 text-gray-500">{item.category?.name}</td>
+                      <td className="px-4 py-3 text-gray-700">₱{Number(item.price).toFixed(2)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`font-bold ${item.stock_quantity <= item.low_stock_threshold ? 'text-red-600' : 'text-gray-800'}`}>
+                          {item.stock_quantity}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">{item.low_stock_threshold}</td>
+                      <td className="px-4 py-3">
+                        {item.stock_quantity === 0 ? (
+                          <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">Out of Stock</span>
+                        ) : item.is_low_stock ? (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Low Stock</span>
+                        ) : (
+                          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">In Stock</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => setAdjustItem(item)}
+                          className="rounded-lg bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-600 hover:bg-orange-100 transition"
+                        >
+                          Adjust
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Adjust Modal */}
+      {adjustItem && (
+        <AdjustModal
+          item={adjustItem}
+          onClose={() => setAdjustItem(null)}
+          onSaved={() => { setAdjustItem(null); fetchInventory() }}
+        />
+      )}
+    </div>
+  )
+}

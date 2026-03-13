@@ -1,171 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
-import api from '../../services/api';
-import toast from 'react-hot-toast';
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from 'recharts'
+import api from '../../services/api'
+import LoadingSpinner from '../common/LoadingSpinner'
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
-
-const OrderTrendChart = ({ days = 30 }) => {
-  const [chartData, setChartData] = useState({
-    labels: [],
-    datasets: [
-      {
-        label: 'Number of Orders',
-        data: [],
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.4,
-        fill: true,
-        yAxisID: 'y'
-      },
-      {
-        label: 'Sales Revenue',
-        data: [],
-        borderColor: 'rgb(16, 185, 129)',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        tension: 0.4,
-        fill: true,
-        yAxisID: 'y1'
-      }
-    ]
-  });
-  const [loading, setLoading] = useState(true);
+export default function OrderTrendChart({ days = 30 }) {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchTrendData();
-  }, [days]);
+    api.get('/reports/order-trends', { params: { days } })
+      .then(({ data: res }) => setData(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [days])
 
-  const fetchTrendData = async () => {
-    try {
-      const response = await api.get('/reports/order-trends', { params: { days } });
-      const data = response.data || [];
+  if (loading) return <LoadingSpinner size="sm" />
 
-      setChartData({
-        labels: data.map(item => item.date || ''),
-        datasets: [
-          {
-            label: 'Number of Orders',
-            data: data.map(item => Number(item.order_count) || 0),
-            borderColor: 'rgb(59, 130, 246)',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            tension: 0.4,
-            fill: true,
-            yAxisID: 'y'
-          },
-          {
-            label: 'Sales Revenue',
-            data: data.map(item => Number(item.total_sales) || 0),
-            borderColor: 'rgb(16, 185, 129)',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            tension: 0.4,
-            fill: true,
-            yAxisID: 'y1'
-          }
-        ]
-      });
-    } catch (error) {
-      console.error('Failed to load trend data:', error);
-      toast.error('Failed to load trend data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            let label = context.dataset.label || '';
-            let value = context.raw || 0;
-            if (context.dataset.label === 'Sales Revenue') {
-              return `${label}: $${Number(value).toFixed(2)}`;
-            }
-            return `${label}: ${value}`;
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        type: 'linear',
-        display: true,
-        position: 'left',
-        title: {
-          display: true,
-          text: 'Order Count'
-        },
-        beginAtZero: true
-      },
-      y1: {
-        type: 'linear',
-        display: true,
-        position: 'right',
-        title: {
-          display: true,
-          text: 'Revenue ($)'
-        },
-        grid: {
-          drawOnChartArea: false,
-        },
-        ticks: {
-          callback: function(value) {
-            return '$' + value;
-          }
-        },
-        beginAtZero: true
-      }
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
+  const formatted = data.map((d) => ({
+    date: new Date(d.date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }),
+    total: d.total_orders,
+    completed: d.completed_orders,
+    cancelled: d.cancelled_orders,
+  }))
 
   return (
-    <div style={{ height: '300px' }}>
-      {chartData.labels.length > 0 ? (
-        <Line data={chartData} options={options} />
-      ) : (
-        <div className="flex justify-center items-center h-full text-gray-500">
-          No data available for selected period
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default OrderTrendChart;
+    <ResponsiveContainer width="100%" height={260}>
+      <LineChart data={formatted} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+        <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} />
+        <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
+        <Tooltip />
+        <Legend />
+        <Line type="monotone" dataKey="total"     name="Total"     stroke="#f97316" strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="completed" name="Completed" stroke="#10b981" strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="cancelled" name="Cancelled" stroke="#ef4444" strokeWidth={2} dot={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  )
+}

@@ -1,126 +1,133 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { initializeCsrf } from '../../services/api';
-import toast from 'react-hot-toast';
+import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import toast from 'react-hot-toast'
 
-const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
+export default function Login() {
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
+    setErrors((err) => ({ ...err, [e.target.name]: '' }))
+  }
+
+  const validate = () => {
+    const e = {}
+    if (!form.email) e.email = 'Email is required.'
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Enter a valid email.'
+    if (!form.password) e.password = 'Password is required.'
+    return e
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+    e.preventDefault()
+    const errs = validate()
+    if (Object.keys(errs).length) return setErrors(errs)
 
+    setLoading(true)
     try {
-      // Initialize CSRF protection
-      await initializeCsrf();
-      
-      // Small delay to ensure cookie is set
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Then login
-      const data = await login(formData.email, formData.password);
-      
-      if (data.success) {
-        toast.success('Login successful!');
-        
-        if (data.user.role === 'admin') {
-          navigate('/dashboard');
-        } else if (data.user.role === 'cashier') {
-          navigate('/pos');
-        } else {
-          navigate('/menu');
-        }
-      } else {
-        toast.error(data.message || 'Login failed');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error(error.response?.data?.message || 'Login failed');
+      const user = await login(form.email, form.password)
+      toast.success(`Welcome back, ${user.name}!`)
+      if (user.role === 'admin') navigate('/dashboard')
+      else if (user.role === 'cashier') navigate('/pos')
+      else navigate('/menu')
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Login failed. Please try again.'
+      toast.error(msg)
+      if (err.response?.data?.errors) setErrors(err.response.data.errors)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  // Quick-fill demo credentials
+  const fillDemo = (role) => {
+    const creds = {
+      admin:    { email: 'admin@canteen.com',   password: 'password' },
+      cashier:  { email: 'cashier@canteen.com', password: 'password' },
+      customer: { email: 'juan@student.edu',    password: 'password' },
+    }
+    setForm(creds[role])
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Canteen Management System
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your account
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="text-5xl mb-3">🍽️</div>
+          <h1 className="text-2xl font-bold text-gray-800">Canteen Management</h1>
+          <p className="text-gray-500 text-sm mt-1">Sign in to your account</p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-              />
-            </div>
+
+        {/* Demo buttons */}
+        <div className="flex gap-2 mb-6">
+          {['admin', 'cashier', 'customer'].map((role) => (
+            <button
+              key={role}
+              type="button"
+              onClick={() => fillDemo(role)}
+              className="flex-1 text-xs py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-orange-50 hover:border-orange-300 capitalize transition"
+            >
+              {role}
+            </button>
+          ))}
+        </div>
+        <p className="text-center text-xs text-gray-400 mb-6">↑ Click to fill demo credentials</p>
+
+        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="you@example.com"
+              className={`w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition
+                focus:ring-2 focus:ring-orange-400
+                ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+            />
+            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
 
+          {/* Password */}
           <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+              className={`w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition
+                focus:ring-2 focus:ring-orange-400
+                ${errors.password ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+            />
+            {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
           </div>
-          
-          <div className="text-center">
-            <Link to="/register" className="text-sm text-primary-600 hover:text-primary-500">
-              Don't have an account? Sign up
-            </Link>
-          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-orange-500 py-2.5 text-white font-semibold hover:bg-orange-600 transition disabled:opacity-60"
+          >
+            {loading ? 'Signing in…' : 'Sign In'}
+          </button>
         </form>
+
+        <p className="text-center text-xs text-gray-400 mt-6">
+          Don't have an account?{' '}
+          <Link to="/register" className="text-orange-500 hover:underline font-medium">
+            Register
+          </Link>
+        </p>
       </div>
     </div>
-  );
-};
-
-export default Login;
+  )
+}

@@ -1,60 +1,31 @@
-import api from './api';
+import api from './api'
 
-class AuthService {
+const authService = {
   async login(email, password) {
-    const response = await api.post('/login', { email, password });
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-    }
-    return response.data;
-  }
+    const { data } = await api.post('/auth/login', { email, password })
+    return data
+  },
 
-  async register(userData) {
-    const response = await api.post('/register', userData);
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-    }
-    return response.data;
-  }
+  async register(name, email, password, password_confirmation, role = 'customer') {
+    const { data } = await api.post('/auth/register', {
+      name,
+      email,
+      password,
+      password_confirmation,
+      role,
+    })
+    return data
+  },
 
-  logout() {
-    api.post('/logout').finally(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-    });
-  }
+  async me() {
+    const { data } = await api.get('/auth/me')
+    return data
+  },
 
-  getCurrentUser() {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  }
-
-  getToken() {
-    return localStorage.getItem('token');
-  }
-
-  isAuthenticated() {
-    return !!this.getToken();
-  }
-
-  hasRole(role) {
-    const user = this.getCurrentUser();
-    return user && user.role === role;
-  }
-
-  isAdmin() {
-    return this.hasRole('admin');
-  }
-
-  isCashier() {
-    return this.hasRole('cashier');
-  }
-
-  isCustomer() {
-    return this.hasRole('customer');
-  }
+  async logout() {
+    const { data } = await api.post('/auth/logout')
+    return data
+  },
 }
 
-export default new AuthService();
+export default authService

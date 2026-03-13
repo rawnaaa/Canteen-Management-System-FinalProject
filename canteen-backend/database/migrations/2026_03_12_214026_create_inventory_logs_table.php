@@ -6,21 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('inventory_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('menu_item_id')->constrained()->onDelete('cascade');
-            $table->integer('previous_quantity');
-            $table->integer('new_quantity');
-            $table->integer('quantity_change');
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->integer('quantity_change'); // positive = restock, negative = deduction
+            $table->integer('quantity_before');
+            $table->integer('quantity_after');
+            $table->enum('type', ['restock', 'deduction', 'adjustment', 'order']);
             $table->string('reason')->nullable();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('order_id')->nullable()->constrained()->onDelete('set null');
             $table->timestamps();
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('inventory_logs');
     }
