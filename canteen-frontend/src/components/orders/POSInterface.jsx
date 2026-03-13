@@ -77,7 +77,11 @@ export default function POSInterface() {
   if (loading) return <LoadingSpinner text="Loading POS…" />
 
   if (completedOrder) {
-    return <OrderReceipt order={completedOrder} onNew={() => setCompletedOrder(null)} />
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white py-12 px-4">
+        <OrderReceipt order={completedOrder} onNew={() => setCompletedOrder(null)} />
+      </div>
+    )
   }
 
   return (

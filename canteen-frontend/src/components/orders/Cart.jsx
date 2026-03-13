@@ -4,11 +4,13 @@ import { Trash2, Minus, Plus } from 'lucide-react'
 import { useCart } from '../../context/CartContext'
 import api from '../../services/api'
 import toast from 'react-hot-toast'
+import OrderReceipt from './OrderReceipt'
 
 export default function Cart() {
   const { items, removeItem, updateQuantity, clearCart, total } = useCart()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [orderComplete, setOrderComplete] = useState(null)
 
   const handleCheckout = async () => {
     if (items.length === 0) {
@@ -31,10 +33,7 @@ export default function Cart() {
       console.log('Order created:', data)
       toast.success('Order placed successfully!')
       clearCart()
-      // Redirect to My Orders after a brief delay to ensure state updates
-      setTimeout(() => {
-        navigate('/my-orders')
-      }, 500)
+      setOrderComplete(data.data)
     } catch (err) {
       console.error('Checkout error:', err.response?.data || err)
       const errorMsg = err.response?.data?.message || 'Failed to place order'
@@ -42,6 +41,20 @@ export default function Cart() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleNewOrder = () => {
+    setOrderComplete(null)
+    navigate('/menu')
+  }
+
+  // Show receipt after successful checkout
+  if (orderComplete) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white py-12 px-4">
+        <OrderReceipt order={orderComplete} onNew={handleNewOrder} />
+      </div>
+    )
   }
 
   return (
