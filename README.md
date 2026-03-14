@@ -1,23 +1,14 @@
-"# Canteen Management System - IT15 Final Project" 
-"" 
-"A full-stack Canteen Management System built with React.js and Laravel." 
+A full-stack Canteen Management System built with React.js and Laravel.
 
-**Setup and Installation Instructions**
+Setup and Installation Instructions
 
-Read [](file:///c%3A/Users/ADMIN/Documents/CanteenManagementSystem/README.md#1-1), lines 1 to 1
-
-I'll create a comprehensive README with complete setup and installation instructions:
-
-```markdown
-# 🍽️ Canteen Management System
-
-**A Full-Stack Web Application for Campus/School Canteen Operations**
+ Canteen Management System
 
 IT15 Final Project — Managing inventory, orders, and sales for a canteen.
 
 ---
 
-## 📋 Table of Contents
+Table of Contents
 
 1. [Overview](#overview)
 2. [Features](#features)
@@ -33,11 +24,9 @@ IT15 Final Project — Managing inventory, orders, and sales for a canteen.
 12. [Troubleshooting](#troubleshooting)
 13. [Contributing](#contributing)
 
----
+  Overview
 
-## 📖 Overview
-
-The **Canteen Management System** is a complete web-based solution for managing canteen operations including:
+The Canteen Management System is a complete web-based solution for managing canteen operations including:
 - Customer menu browsing and ordering
 - Cashier point-of-sale (POS) interface
 - Admin dashboard with analytics and reports
@@ -45,48 +34,48 @@ The **Canteen Management System** is a complete web-based solution for managing 
 - User role management (Admin, Cashier, Customer)
 - Order history and receipt generation
 
-**Live Deployment:** https://campusbite.com (production ready)
 
----
 
-## ✨ Features
 
-### 👥 Customer Features
-- ✅ Browse menu with categories and search
-- ✅ Add items to shopping cart
-- ✅ Place orders with checkout
-- ✅ View order receipt/summary
-- ✅ Track my orders and order history
-- ✅ Print receipts
 
-### 💼 Cashier Features
-- ✅ Point-of-sale (POS) interface
-- ✅ Quick item selection and cart management
-- ✅ Place orders (including for customers)
-- ✅ View order queue/status
-- ✅ Print receipts
-- ✅ Basic inventory visibility
+ Features
 
-### 👨‍💼 Admin Features
-- ✅ Dashboard with sales analytics
-- ✅ Revenue & order metrics (daily, weekly, monthly)
-- ✅ Sales charts and trends
-- ✅ Best-selling items report
-- ✅ Category-wise sales breakdown
-- ✅ Menu management (CRUD)
-- ✅ Category management (CRUD)
-- ✅ Inventory management with low-stock alerts
-- ✅ Bulk restock operations
-- ✅ User management (create/edit/delete)
-- ✅ Order management
-- ✅ Advanced reporting
+Customer Features
+-  Browse menu with categories and search
+-  Add items to shopping cart
+- Place orders with checkout
+- View order receipt/summary
+- Track my orders and order history
+- Print receipts
 
----
+Cashier Features
+- Point-of-sale (POS) interface
+- Quick item selection and cart management
+-  Place orders (including for customers)
+-  View order queue/status
+- Print receipts
+- Basic inventory visibility
 
-## 🛠️ Tech Stack
+Admin Features
+-  Dashboard with sales analytics
+-  Revenue & order metrics (daily, weekly, monthly)
+- Sales charts and trends
+- Best-selling items report
+- Category-wise sales breakdown
+-  Menu management (CRUD)
+-  Category management (CRUD)
+-  Inventory management with low-stock alerts
+- Bulk restock operations
+- User management (create/edit/delete)
+- Order management
+- Advanced reporting
 
-### **Frontend**
-| Technology | Version | Purpose |
+
+
+Tech Stack
+
+Frontend
+Technology Version Purpose 
 |-----------|---------|---------|
 | React | 18.2.0 | UI library |
 | Vite | 5.1.0 | Build tool & dev server |
