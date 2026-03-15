@@ -1,31 +1,25 @@
 A full-stack Canteen Management System built with React.js and Laravel.
-
 Setup and Installation Instructions
-
  Canteen Management System
 
 IT15 Final Project — Managing inventory, orders, and sales for a canteen.
 
----
-
 Table of Contents
-
-1. [Overview](#overview)
-2. [Features](#features)
-3. [Tech Stack](#tech-stack)
-4. [Prerequisites](#prerequisites)
-5. [Installation](#installation)
-6. [Configuration](#configuration)
-7. [Running the Project](#running-the-project)
-8. [Project Structure](#project-structure)
-9. [API Documentation](#api-documentation)
-10. [Database Schema](#database-schema)
-11. [Security](#security)
-12. [Troubleshooting](#troubleshooting)
-13. [Contributing](#contributing)
+1. Overview
+2. Features
+3. Tech Stack
+4. Prerequisites
+5. Installation
+6. Configuration
+7. Running the Project
+8. Project Structure
+9. API Documentation
+10. Database Schema
+11. Security
+12. Troubleshooting
+13. Contributing
 
   Overview
-
 The Canteen Management System is a complete web-based solution for managing canteen operations including:
 - Customer menu browsing and ordering
 - Cashier point-of-sale (POS) interface
@@ -35,11 +29,7 @@ The Canteen Management System is a complete web-based solution for managing cant
 - Order history and receipt generation
 
 
-
-
-
  Features
-
 Customer Features
 -  Browse menu with categories and search
 -  Add items to shopping cart
@@ -71,97 +61,71 @@ Admin Features
 - Advanced reporting
 
 
-
 Tech Stack
-
 Frontend
-Technology Version Purpose 
-|-----------|---------|---------|
-| React | 18.2.0 | UI library |
-| Vite | 5.1.0 | Build tool & dev server |
-| React Router | 6.22.0 | Client-side routing |
-| Axios | 1.6.7 | HTTP client |
-| Tailwind CSS | 3.4.1 | Styling |
-| Recharts | 2.12.0 | Data visualization |
-| Chart.js | 4.4.0 | Charts |
-| Lucide React | 0.356.0 | Icons |
-| React Hot Toast | 2.4.1 | Notifications |
+ React  18.2.0  UI library 
+ Vite  5.1.0  Build tool & dev server 
+ React Router  6.22.0  Client-side routing 
+ Axios  1.6.7  HTTP client 
+ Tailwind CSS  3.4.1  Styling 
+ Recharts  2.12.0  Data visualization 
+ Chart.js  4.4.0  Charts 
+ Lucide React  0.356.0  Icons 
+ React Hot Toast  2.4.1  Notifications 
 
-**Ports:** 3000, 3001, 5173 (configurable in `vite.config.js`)
 
-### **Backend**
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| Laravel | 12.0 | Web framework |
-| PHP | 8.2+ | Server language |
-| MySQL | 5.7+ | Database |
-| Sanctum | 4.3 | API authentication |
+Backend
+Laravel  12.0  Web framework 
+ PHP  8.2+  Server language 
+ MySQL  5.7+  Database 
+Sanctum  4.3  API authentication 
 
-**Port:** 8000 (configurable)
 
----
+Prerequisites
 
-## 📦 Prerequisites
+System
+- OS: Windows
+- RAM: 8gb
+- Storage: 238gb
 
-### **System Requirements**
-- **OS:** Windows, macOS, or Linux
-- **RAM:** 4GB minimum
-- **Disk Space:** 2GB free
+ Software
 
-### **Required Software**
+Backend
+1. PHP 8.2+ 
+   php -v  
 
-#### **Backend Requirements**
-1. **PHP 8.2+** — [Download](https://www.php.net/downloads)
-   ```bash
-   php -v  # Verify installation
-   ```
 
-2. **Composer** — [Download](https://getcomposer.org/)
-   ```bash
+2. Composer
    composer --version
-   ```
 
-3. **MySQL 5.7+** — [Download](https://www.mysql.com/downloads/)
-   ```bash
+
+3. MySQL 5.7+
    mysql --version
-   ```
+   
 
-#### **Frontend Requirements**
-1. **Node.js 18+** & **npm** — [Download](https://nodejs.org/)
-   ```bash
+Frontend Requirements
+1. Node.js 18+ & npm
    node -v && npm -v
-   ```
+ 
 
----
+Installation
 
-## 📥 Installation
-
-### **Step 1: Clone Repository**
-
-```bash
+Step 1: Clone Repository
 git clone <repository-url>
 cd CanteenManagementSystem
-```
 
----
+Step 2: Backend Setup
 
-### **Step 2: Backend Setup**
-
-#### 2.1 Install Dependencies
-```bash
+ 2.1 Install Dependencies
 cd canteen-backend
 composer install
-```
 
-#### 2.2 Environment Configuration
-Copy `.env.example` to `.env`:
-```bash
-cp .env.example .env
-```
 
-Edit `.env` with your database credentials:
-```env
-APP_NAME=CanteenManagementSystem
+ 2.2 Environment Configuration
+copy .env.example .env
+
+env
+APP_NAME=canteen_db
 APP_ENV=local
 APP_KEY=base64:KQH/2yScKZnO99HODfWfz1e71g8p468UIydR2tc5HP8=
 APP_DEBUG=true
@@ -172,107 +136,77 @@ DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=canteen_db
 DB_USERNAME=root
-DB_PASSWORD=your_password_here
+DB_PASSWORD=pass
 
 SANCTUM_STATEFUL_DOMAINS=localhost:3000,localhost:3001,localhost:5173
 SESSION_DOMAIN=localhost
 FRONTEND_URL=http://localhost:3000
-```
+ 
 
-#### 2.3 Generate Application Key
-```bash
+ 2.3 Generate Application Key
+
 php artisan key:generate
-```
 
-#### 2.4 Create Database
-```bash
-# Using MySQL CLI
+
+ 2.4 Create Database
+bash
+
 mysql -u root -p
 CREATE DATABASE canteen_db;
 EXIT;
 
-# Or use phpMyAdmin / MySQL Workbench
-```
-
-#### 2.5 Run Migrations & Seeders
-```bash
-# Create tables
+ 2.5 Run Migrations & Seeders
 php artisan migrate
 
-# Seed sample data (categories, menu items, users)
+ Seed sample data (categories, menu items, users)
 php artisan db:seed
-```
 
-**Sample Login Credentials after seeding:**
-- **Admin:** admin@example.com / password
-- **Cashier:** cashier@example.com / password
-- **Customer:** customer@example.com / password
 
----
+Sample Login Credentials after seeding:
+- Admin: admin@example.com / password
+- Cashier: cashier@example.com / password
+- Customer: customer@example.com / password
 
-### **Step 3: Frontend Setup**
 
-#### 3.1 Install Dependencies
-```bash
-cd ../canteen-frontend
+Step 3: Frontend Setup
+
+3.1 Install Dependencies
+cd canteen-frontend
 npm install
-```
 
-#### 3.2 Environment Configuration (Optional)
-Create `.env.local` (if needed):
-```env
+
+ 3.2 Environment Configuration (Optional)
 VITE_API_URL=http://localhost:8000/api
-```
 
----
+Running the Project
 
-## 🚀 Running the Project
-
-### **Terminal 1: Start Laravel Backend**
-```bash
+Terminal 1: Start Laravel Backend
 cd canteen-backend
 
-# Using PHP built-in server
+ Using PHP built-in server
 php artisan serve
 
-# Or Windows direct
-php -S localhost:8000 -t public
+Server runs on: http://localhost:8000
 
-# Server runs on: http://localhost:8000
-```
-
-### **Terminal 2: Start React Frontend**
-```bash
+Terminal 2: Start React Frontend
 cd canteen-frontend
-
-# Development server
 npm run dev
 
-# Frontend available at: http://localhost:3000 or http://localhost:5173
-```
+Frontend available at: http://localhost:3000 or http://localhost:5173
 
-### **Terminal 3: (Optional) MySQL Server**
-```bash
-# Windows - Make sure MySQL is running
-# Services > MySQL80 (or your version)
 
-# Or via command line:
-mysql -u root -p
-```
 
----
+Access the Application
 
-### **Access the Application**
+ Role  URL  Email  Password 
 
-| Role | URL | Email | Password |
-|------|-----|-------|----------|
-| **Customer** | http://localhost:3000 | customer@example.com | password |
-| **Cashier** | http://localhost:3000 | cashier@example.com | password |
-| **Admin** | http://localhost:3000 | admin@example.com | password |
+ Customer  http://localhost:3000  customer@example.com  password 
+ Cashier  http://localhost:3000  cashier@example.com  password 
+ Admin  http://localhost:3000  admin@example.com  password 
 
----
 
-## 📂 Project Structure
+
+ Project Structure
 
 ```
 CanteenManagementSystem/
@@ -320,129 +254,123 @@ CanteenManagementSystem/
 └── README.md                         # This file
 ```
 
----
 
-## 📡 API Documentation
 
-### **Base URL:** `http://localhost:8000/api`
+ API Documentation
 
-### **Authentication**
+Base URL: `http://localhost:8000/api`
+
+Authentication
 All protected endpoints require:
 ```
 Authorization: Bearer {access_token}
 ```
 
-### **Main Endpoints**
+Main Endpoints
 
-#### **Auth**
+Auth
 - `POST /auth/register` — Register new user
 - `POST /auth/login` — Login & get token
 - `GET /auth/me` — Get current user
 - `POST /auth/logout` — Logout
 
-#### **Menu**
+Menu
 - `GET /menu` — List items (with filters)
 - `POST /menu` — Create item (admin)
 - `PUT /menu/{id}` — Update item (admin)
 - `DELETE /menu/{id}` — Delete item (admin)
 
-#### **Orders**
+Orders
 - `GET /orders` — List orders
 - `POST /orders` — Create order
 - `PATCH /orders/{id}/status` — Update status (admin/cashier)
 
-#### **Inventory**
+Inventory
 - `GET /inventory` — List stock
 - `PATCH /inventory/{id}/adjust` — Adjust stock
 
-#### **Reports** (Admin only)
+Reports (Admin only)
 - `GET /reports/sales-summary` — Sales overview
 - `GET /reports/daily-sales` — Daily sales chart
 - `GET /reports/best-sellers` — Top items
 - `GET /reports/category-sales` — Sales by category
 
-**Full API Documentation**
+Full API Documentation
 
----
+ Database Schema
 
-## 🗄️ Database Schema
+Core Tables
+1. users — System users (admin, cashier, customer)
+2. categories — Menu categories
+3. menu_items — Food/drink items with prices & stock
+4. orders — Customer orders
+5. order_items — Items in an order
+6. inventory_logs — Stock change audit trail
 
-### **Core Tables**
-1. **users** — System users (admin, cashier, customer)
-2. **categories** — Menu categories
-3. **menu_items** — Food/drink items with prices & stock
-4. **orders** — Customer orders
-5. **order_items** — Items in an order
-6. **inventory_logs** — Stock change audit trail
+Entity Relationship Diagram (ERD)
+ Security
 
-**Entity Relationship Diagram (ERD)**
+Implemented Security Features
 
----
-
-## 🔒 Security
-
-### **Implemented Security Features**
-
-✅ **Authentication & Authorization**
+Authentication & Authorization
 - Bearer token authentication (Sanctum)
 - Role-based access control (Admin, Cashier, Customer)
 - Password hashing with bcrypt
 
-✅ **Input Validation**
+Input Validation
 - Server-side validation on all inputs
 - File upload restrictions (image only, max 2MB)
 - Prevention of SQL injection via parameterized queries
 
-✅ **CORS Protection**
+CORS Protection
 - Configured for specific frontend origins
 - Credentials supported for authentication
 
-✅ **Environment Security**
+Environment Security
 - Sensitive data in `.env` (not version controlled)
 - Database credentials protected
 - API keys/tokens in environment variables
 
-✅ **Data Protection**
+Data Protection
 - Encrypted database transactions
 - Foreign key constraints
 - Audit trail for inventory changes
 
-### **Production Recommendations**
+Production Recommendations
 
-1. **Enable HTTPS**
+1. Enable HTTPS
    ```env
    APP_URL=https://yourdomain.com
    FRONTEND_URL=https://yourdomain.com
    ```
 
-2. **Update CORS for production domain**
+2. Update CORS for production domain
    ```php
    'allowed_origins' => ['https://yourdomain.com']
    ```
 
-3. **Set strong database password**
+3. Set strong database password
 
-4. **Use environment-specific `.env` files**
+4. Use environment-specific `.env` files
 
-5. **Enable rate limiting on auth endpoints**
+5. Enable rate limiting on auth endpoints
 
----
 
-## 🐛 Troubleshooting
 
-### **Backend Issues**
+ Troubleshooting
 
-#### Port 8000 Already in Use
+Backend Issues
+
+ Port 8000 Already in Use
 ```bash
 # Find process using port 8000
-lsof -i :8000  # macOS/Linux
 netstat -ano | findstr :8000  # Windows
 
 # Kill process or use different port
 php artisan serve --port=8001
 ```
 
-#### Database Connection Error
+ Database Connection Error
 ```bash
 # Verify MySQL is running
 mysql -u root -p
@@ -454,7 +382,7 @@ DB_USERNAME=root
 DB_PASSWORD=your_password
 ```
 
-#### Migrations Not Running
+ Migrations Not Running
 ```bash
 # Check migration status
 php artisan migrate:status
@@ -463,24 +391,24 @@ php artisan migrate:status
 php artisan migrate:fresh --seed
 ```
 
----
 
-### **Frontend Issues**
 
-#### Node modules errors
+Frontend Issues
+
+ Node modules errors
 ```bash
 # Clear node_modules and reinstall
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-#### Port 3000 Already in Use
+ Port 3000 Already in Use
 ```bash
 # Use different port
 npm run dev -- --port 3001
 ```
 
-#### CORS Errors
+ CORS Errors
 ```env
 # Verify FRONTEND_URL in backend .env
 FRONTEND_URL=http://localhost:3000
@@ -489,42 +417,41 @@ FRONTEND_URL=http://localhost:3000
 'allowed_origins' => ['http://localhost:3000']
 ```
 
----
 
-### **API Connection Issues**
 
-#### Can't reach localhost:8000
-- ✅ Backend running? (`php artisan serve`)
-- ✅ Port correct in `.env`? (`APP_URL=http://localhost:8000`)
-- ✅ Firewall blocking? (Allow port 8000)
+API Connection Issues
 
-#### 401 Unauthorized Error
-- ✅ Token expired? Re-login
-- ✅ Wrong token format? Use `Authorization: Bearer token`
-- ✅ Token missing from API calls? Check Axios interceptor
+ Can't reach localhost:8000
+-  Backend running? (`php artisan serve`)
+- Port correct in `.env`? (`APP_URL=http://localhost:8000`)
+-  Firewall blocking? (Allow port 8000)
 
----
+ 401 Unauthorized Error
+- Token expired? Re-login
+-  Wrong token format? Use `Authorization: Bearer token`
+-  Token missing from API calls? Check Axios interceptor
 
-## 📝 Development Workflow
 
-### **Making Changes**
 
-1. **Backend Changes**
+ Development Workflow
+
+Making Changes
+
+1. Backend Changes
    ```bash
-   cd canteen-backend
-   php artisan tinker  # Test changes interactively
+   cd canteen-backen
    # Make changes to controllers/models
-   php artisan migrate  # If schema changes
+   php artisan migrate  
    ```
 
-2. **Frontend Changes**
+2. Frontend Changes
    ```bash
    cd canteen-frontend
    # Vite auto-reloads on save
    # Check console (F12) for errors
    ```
 
-3. **Database Changes**
+3. Database Changes
    ```bash
    # Create new migration
    php artisan make:migration create_table_name
@@ -532,17 +459,15 @@ FRONTEND_URL=http://localhost:3000
    php artisan migrate
    ```
 
----
+ Testing
 
-## 🧪 Testing
-
-### **Backend Tests**
+Backend Tests
 ```bash
 cd canteen-backend
 php artisan test
 ```
 
-### **Frontend Tests** (Optional)
+Frontend Tests
 ```bash
 cd canteen-frontend
 npm test
@@ -550,25 +475,25 @@ npm test
 
 ---
 
-## 📦 Deployment
+ Deployment
 
-### **Production Checklist**
+Production Checklist
 
-- [ ] Set `APP_ENV=production` in `.env`
-- [ ] Set `APP_DEBUG=false`
-- [ ] Generate unique `APP_KEY`: `php artisan key:generate`
-- [ ] Update database with production credentials
-- [ ] Use HTTPS with valid SSL certificate
-- [ ] Update `SANCTUM_STATEFUL_DOMAINS` to production domain
-- [ ] Configure CORS for production domain
-- [ ] Set strong database password
-- [ ] Enable database backups
-- [ ] Configure email for production (if using mail)
+-  Set `APP_ENV=production` in `.env`
+-  Set `APP_DEBUG=false`
+-  Generate unique `APP_KEY`: `php artisan key:generate`
+-  Update database with production credentials
+-  Use HTTPS with valid SSL certificate
+-  Update `SANCTUM_STATEFUL_DOMAINS` to production domain
+-  Configure CORS for production domain
+-  Set strong database password
+-  Enable database backups
+- [ Configure email for production (if using mail)
 
-### **Deploy to Server**
+Deploy to Server
 
 ```bash
-# To DigitalOcean, AWS, Heroku, etc.
+
 
 # 1. Push to GitHub
 git push origin main
@@ -590,49 +515,18 @@ php artisan migrate --force
 sudo systemctl restart php-fpm
 ```
 
----
 
-## 📚 Learning Resources
 
-- **Laravel Documentation:** https://laravel.com/docs
-- **React Documentation:** https://react.dev
-- **Tailwind CSS:** https://tailwindcss.com/docs
-- **MySQL Reference:** https://dev.mysql.com/doc/
+Learning Resources
 
----
+- Laravel Documentation: https://laravel.com/docs
+- React Documentation: https://react.dev
+- Tailwind CSS: https://tailwindcss.com/docs
+- MySQL Reference: https://dev.mysql.com/doc/
 
-## 📧 Support & Contact
 
-For issues, questions, or suggestions:
-- Email: support@campusbite.com
-- GitHub Issues: [Submit an issue]
-- Response time: 24-48 hours
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License**.
-
-```
-MIT License
-
-Copyright (c) 2026 Canteen Management System - IT15 Final Project
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-```
-
----
-
-## 🎉 Getting Started
+ 
+ Getting Started
 
 Ready to run the project? Follow these 3 simple steps:
 
@@ -646,19 +540,16 @@ cd canteen-frontend && npm run dev
 # 3. Open browser
 # http://localhost:3000 → Login with demo credentials
 ```
+ Welcome to Canteen Management System.
 
-**That's it!** 🚀 Welcome to Canteen Management System.
 
----
 
-**Last Updated:** March 14, 2026  
-**Version:** 1.0.0  
-**Status:** ✅ Production Ready
+Last Updated: March 14, 2026  
+Version: 1.0.0  
+Status:  Production Ready
 ```
 
-This comprehensive README covers everything needed for installation, configuration, and running the project. You can create this as the root `README.md` in your repository.This comprehensive README covers everything needed for installation, configuration, and running the project. You can create this as the root `README.md` in your repository.
 
-Similar code found with 2 license types
 
 
 
